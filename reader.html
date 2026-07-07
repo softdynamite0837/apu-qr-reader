@@ -128,34 +128,36 @@ function onScanSuccess(decodedText) {
     return;
   }
 
-  const payload = JSON.stringify({
+  const payload = {
     action: 'verify_with_location',
     qr_data: decodedText,
     reader_lat: readerLat || 0,
     reader_lon: readerLon || 0,
     location_required: false
-  });
+  };
 
-  // google.script.runで呼び出し
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res && res.success) {
-        showResult(true, '認証成功', res.name,
-          (res.department || '') + ' ' + (res.year || '') + '年',
-          res.timestamp || '');
-        addLog(res.name, res.student_id, '成功');
-      } else {
-        showResult(false, (res && res.error) || '認証失敗',
-          (qrData && qrData.id) || '', '', '');
-        addLog((qrData && qrData.id) || '不明',
-          (qrData && qrData.id) || '', '失敗');
-      }
-    })
-    .withFailureHandler(function(err) {
-      Logger.log('認証エラー: ' + JSON.stringify(err));
-      showResult(false, 'サーバーエラー: ' + (err.message || ''), '', '', '');
-    })
-    .handlePostFromClient(payload);
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res && res.success) {
+      showResult(true, '認証成功', res.name,
+        (res.department || '') + ' ' + (res.year || '') + '年',
+        res.timestamp || '');
+      addLog(res.name, res.student_id, '成功');
+    } else {
+      showResult(false, (res && res.error) || '認証失敗',
+        (qrData && qrData.id) || '', '', '');
+      addLog((qrData && qrData.id) || '不明',
+        (qrData && qrData.id) || '', '失敗');
+    }
+  })
+  .catch(err => {
+    showResult(false, 'サーバーエラー: ' + err.message, '', '', '');
+  });
 }
   function onScanError() {} // エラーは無視
 
