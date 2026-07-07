@@ -128,19 +128,12 @@ function onScanSuccess(decodedText) {
     return;
   }
 
-  const payload = {
-    action: 'verify_with_location',
-    qr_data: decodedText,
-    reader_lat: readerLat || 0,
-    reader_lon: readerLon || 0,
-    location_required: false
-  };
+  const params = new URLSearchParams({
+    action: 'verify',
+    qr_data: decodedText
+  });
 
-  fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload)
-  })
+  fetch(GAS_URL + '?' + params.toString())
   .then(r => r.json())
   .then(res => {
     if (res && res.success) {
@@ -156,7 +149,7 @@ function onScanSuccess(decodedText) {
     }
   })
   .catch(err => {
-    showResult(false, 'サーバーエラー: ' + err.message, '', '', '');
+    showResult(false, 'エラー: ' + err.message, '', '', '');
   });
 }
   function onScanError() {} // エラーは無視
